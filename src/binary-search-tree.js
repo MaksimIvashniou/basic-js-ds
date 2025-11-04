@@ -6,93 +6,120 @@ const { Node } = require('../extensions/list-tree.js');
 * using Node from extensions
 */
 class BinarySearchTree {
-  constructor() {
-    this.head = null;
-  }
+  #head = null;
 
   root() {
-    return this.head;
+    return this.#head;
   }
 
   add(data) {
-    this.head = addRecursive(this.head);
+    const node = new Node(data);
 
-    function addRecursive(node) {
-      if (!node) return new Node(data);
-      if (node.data === data) return node;
-      if (node.data > data) {
-        node.left = addRecursive(node.left);
-      } else {
-        node.right = addRecursive(node.right);
-      }
-      return node;
+    if (!this.#head) {
+      this.#head = node;
+      return;
     }
+
+    let current = this.#head;
+
+    while (current) {
+      if (data === current.data) {
+        return;
+      }
+
+      const direction = data > current.data ? 'right' : 'left';
+
+      if (!current[direction]) {
+        current[direction] = node;
+        return;
+      }
+
+      current = current[direction];
+    }
+  }
+
+  find(data) {
+    let node = this.#head;
+
+    while (node) {
+      if (data === node.data) return node;
+      node = data > node.data ? node.right : node.left;
+    }
+
+    return null;
   }
 
   has(data) {
     return !!this.find(data);
   }
 
-  find(data) {
-    return findRecursive(this.head);
-
-    function findRecursive(node) {
-      if (!node) return null;
-      if (node.data === data) return node;
-      return node.data > data
-        ? findRecursive(node.left)
-        : findRecursive(node.right);
-    }
-  }
-
   remove(data) {
-    const getMinRecursive = (node) => {
-      if (!node) return null;
-      return node.left ? getMinRecursive(node.left) : node.data;
+    let parent = null;
+    let node = this.#head;
+
+    while (data !== node.data) {
+      if (!node) return;
+      parent = node;
+      node = data > node.data ? node.right : node.left;
+    }
+
+    const replaceChild = (newChild) => {
+      if (!parent) {
+        this.#head = null;
+      } else if (parent.left === node) {
+        parent.left = newChild;
+      } else {
+        parent.right = newChild;
+      }
     };
 
-    this.head = removeRecursive(this.head, data);
-
-    function removeRecursive(node, data) {
-      if (!node) return null;
-
-      if (node.data > data) {
-        node.left = removeRecursive(node.left, data);
-      } else if (node.data < data) {
-        node.right = removeRecursive(node.right, data);
-      } else {
-        if (!node.left && !node.right) return null;
-        if (!node.left) return node.right;
-        if (!node.right) return node.left;
-
-        const min = getMinRecursive(node.right);
-        node.data = min;
-        node.right = removeRecursive(node.right, min);
+    if (!node.left && !node.right) {
+      replaceChild(null);
+    } else if (!node.left || !node.right) {
+      replaceChild(node.left || node.right);
+    } else {
+      let successorParent = node;
+      let successor = node.right;
+      while (successor.left) {
+        successorParent = successor;
+        successor = successor.left;
       }
 
-      return node;
+      node.data = successor.data;
+
+      if (successorParent.left === successor) {
+        successorParent.left = successor.right;
+      } else {
+        successorParent.right = successor.right;
+      }
     }
   }
 
   min() {
-    return getMinRecursive(this.head);
+    let node = this.#head;
 
-    function getMinRecursive(node) {
-      if (!node) return null;
-      return node.left ? getMinRecursive(node.left) : node.data;
+    if (!node) return null;
+
+    while (node.left) {
+      node = node.left;
     }
+
+    return node.data;
   }
 
   max() {
-    return getMaxRecursive(this.head);
+    let node = this.#head;
 
-    function getMaxRecursive(node) {
-      if (!node) return null;
-      return node.right ? getMaxRecursive(node.right) : node.data;
+    if (!node) return null;
+
+    while (node.right) {
+      node = node.right;
     }
+
+    return node.data;
   }
 }
 
 module.exports = {
-  BinarySearchTree
+  BinarySearchTree,
 };
